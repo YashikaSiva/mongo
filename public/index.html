@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Registration</title>
+</head>
+<body>
+
+    <h2>Student Registration Form</h2>
+
+    <form action="/add" method="POST">
+        Name:
+        <input type="text" name="name" required>
+        <br><br>
+
+        Register Number:
+        <input type="text" name="registerNo" required>
+        <br><br>
+
+        Department:
+        <input type="text" name="department" required>
+        <br><br>
+
+        <button type="submit">Register Student</button>
+    </form>
+
+    <hr>
+
+    <h2>Registered Students</h2>
+
+    <button onclick="loadStudents()">View Students</button>
+
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Register Number</th>
+                <th>Department</th>
+                <th>Update</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+
+        <tbody id="studentList"></tbody>
+    </table>
+
+    <script>
+        // READ
+        async function loadStudents() {
+            const response = await fetch("/students");
+            const students = await response.json();
+
+            const list = document.getElementById("studentList");
+            list.innerHTML = "";
+
+            students.forEach(student => {
+                const row = document.createElement("tr");
+
+                [student.name, student.registerNo, student.department]
+                    .forEach(value => {
+                        const cell = document.createElement("td");
+                        cell.textContent = value || "";
+                        row.appendChild(cell);
+                    });
+
+                // UPDATE
+                const updateCell = document.createElement("td");
+                const updateButton = document.createElement("button");
+
+                updateButton.textContent = "Edit";
+                updateButton.onclick = () => updateStudent(student);
+
+                updateCell.appendChild(updateButton);
+                row.appendChild(updateCell);
+
+                // DELETE
+                const deleteCell = document.createElement("td");
+                const deleteButton = document.createElement("button");
+
+                deleteButton.textContent = "Delete";
+                deleteButton.onclick = () => deleteStudent(student._id);
+
+                deleteCell.appendChild(deleteButton);
+                row.appendChild(deleteCell);
+
+                list.appendChild(row);
+            });
+        }
+
+        // UPDATE
+        async function updateStudent(student) {
+            const name = prompt("Enter new name:", student.name);
+            if (name === null) return;
+
+            const registerNo = prompt(
+                "Enter new register number:", student.registerNo
+            );
+            if (registerNo === null) return;
+
+            const department = prompt(
+                "Enter new department:", student.department
+            );
+            if (department === null) return;
+
+            const response = await fetch("/update/" + student._id, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    name,
+                    registerNo,
+                    department
+                })
+            });
+
+            if (response.ok) {
+                alert("Student updated successfully!");
+                loadStudents();
+            } else {
+                alert("Update failed!");
+            }
+        }
+
+        // DELETE
+        async function deleteStudent(id) {
+            if (!confirm("Are you sure you want to delete this student?")) {
+                return;
+            }
+
+            const response = await fetch("/delete/" + id);
+
+            if (response.ok) {
+                alert("Student deleted successfully!");
+                loadStudents();
+            } else {
+                alert("Delete failed!");
+            }
+        }
+
+        // Display students automatically
+        loadStudents();
+    </script>
+
+</body>
+</html>
